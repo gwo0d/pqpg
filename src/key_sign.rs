@@ -40,3 +40,62 @@ impl SigningKey {
             .map(|sk| BASE64_STANDARD.encode(sk.as_bytes()))
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn create_signature_success() {
+        let signing_key = SigningKey::new();
+        let message = b"test message";
+        let signature = signing_key.create_signature(message).unwrap();
+        assert!(!signature.is_empty());
+    }
+
+    #[test]
+    fn create_signature_no_secret_key() {
+        let mut signing_key = SigningKey::new();
+        signing_key.sk = None;
+        let message = b"test message";
+        let result = signing_key.create_signature(message);
+        assert_eq!(result, Err("No secret key available."));
+    }
+
+    #[test]
+    fn verify_signature_success() {
+        let signing_key = SigningKey::new();
+        let message = b"test message";
+        let signature = signing_key.create_signature(message).unwrap();
+        assert!(signing_key.verify_signature(message, signature));
+    }
+
+    #[test]
+    fn verify_signature_failure() {
+        let signing_key = SigningKey::new();
+        let message = b"test message";
+        let invalid_signature = "invalidsignature";
+        assert!(!signing_key.verify_signature(message, invalid_signature.to_string()));
+    }
+
+    #[test]
+    fn get_public_key_success() {
+        let signing_key = SigningKey::new();
+        let public_key = signing_key.get_public_key();
+        assert!(!public_key.is_empty());
+    }
+
+    #[test]
+    fn get_secret_key_success() {
+        let signing_key = SigningKey::new();
+        let secret_key = signing_key.get_secret_key().unwrap();
+        assert!(!secret_key.is_empty());
+    }
+
+    #[test]
+    fn get_secret_key_none() {
+        let mut signing_key = SigningKey::new();
+        signing_key.sk = None;
+        assert!(signing_key.get_secret_key().is_none());
+    }
+}
