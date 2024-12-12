@@ -4,13 +4,6 @@
 
 pqpg (Post-Quantum Privacy Guard) is a tool which provides high-level post-quantum cryptography implementations with support for signing and verification of messages using the SPHINCS+ algorithm. It is intended to provide GPG-like cryptography tools to both technical and non-technical users.
 
-## Features
-
-- Generate new key pairs for signing.
-- Create and verify signatures.
-- Encode and decode keys and signatures using Base64.
-- Serialize and deserialize keys with optional inclusion of secret keys.
-
 ## Usage
 
 ### Generate a New Key Pair
