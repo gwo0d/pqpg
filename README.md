@@ -11,15 +11,6 @@ pqpg (Post-Quantum Privacy Guard) is a tool which provides high-level post-quant
 - Encode and decode keys and signatures using Base64.
 - Serialize and deserialize keys with optional inclusion of secret keys.
 
-## Installation
-
-Add `pqpg` to your `Cargo.toml`:
-
-```toml
-[dependencies]
-pqpg = "0.1.0"
-```
-
 ## Usage
 
 ### Generate a New Key Pair
