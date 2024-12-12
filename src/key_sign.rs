@@ -8,6 +8,7 @@ use serde::{Deserialize, Serialize};
 #[derive(Serialize, Deserialize)]
 pub struct SigningKey {
     pk: PublicKey,
+    #[serde(skip_serializing_if = "Option::is_none")]
     sk: Option<SecretKey>,
 }
 
@@ -56,6 +57,7 @@ impl SigningKey {
 mod tests {
     use super::*;
     use pqcrypto::sign::sphincsshake256ssimple::keypair;
+    use serde_json;
 
     #[test]
     fn new_creates_valid_keypair() {
@@ -131,5 +133,43 @@ mod tests {
         let public_key = BASE64_STANDARD.encode(pk.as_bytes());
         let signing_key = SigningKey::new_from_public_key(public_key).unwrap();
         assert!(signing_key.get_secret_key().is_none());
+    }
+
+    #[test]
+    fn serialize_signing_key_with_secret_key() {
+        let signing_key = SigningKey::new();
+        let serialized = serde_json::to_string(&signing_key).unwrap();
+        assert!(serialized.contains("\"pk\""));
+        assert!(serialized.contains("\"sk\""));
+    }
+
+    #[test]
+    fn serialize_signing_key_without_secret_key() {
+        let (pk, _) = keypair();
+        let public_key = BASE64_STANDARD.encode(pk.as_bytes());
+        let signing_key = SigningKey::new_from_public_key(public_key).unwrap();
+        let serialized = serde_json::to_string(&signing_key).unwrap();
+        assert!(serialized.contains("\"pk\""));
+        assert!(!serialized.contains("\"sk\""));
+    }
+
+    #[test]
+    fn deserialize_signing_key_with_secret_key() {
+        let signing_key = SigningKey::new();
+        let serialized = serde_json::to_string(&signing_key).unwrap();
+        let deserialized: SigningKey = serde_json::from_str(&serialized).unwrap();
+        assert!(deserialized.sk.is_some());
+        assert!(!deserialized.get_public_key().is_empty());
+    }
+
+    #[test]
+    fn deserialize_signing_key_without_secret_key() {
+        let (pk, _) = keypair();
+        let public_key = BASE64_STANDARD.encode(pk.as_bytes());
+        let signing_key = SigningKey::new_from_public_key(public_key).unwrap();
+        let serialized = serde_json::to_string(&signing_key).unwrap();
+        let deserialized: SigningKey = serde_json::from_str(&serialized).unwrap();
+        assert!(deserialized.sk.is_none());
+        assert!(!deserialized.get_public_key().is_empty());
     }
 }
