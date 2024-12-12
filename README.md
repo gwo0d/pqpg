@@ -2,68 +2,72 @@
 
 **This project is under active development and is not presently safe for general use.**
 
-pqpg (Post-Quantum Privacy Guard) is a tool which provides high-level post-quantum cryptography implementations with support for signing and verification of messages using the SPHINCS+ algorithm. It is intended to provide GPG-like cryptography tools to both technical and non-technical users.
+`pqpg` (Post-Quantum Privacy Guard) is a command-line application providing high-level tools for managing post-quantum
+cryptographic identities, signing and verifying messages, and exporting data securely. It aims to bring GPG-like
+functionality to a post-quantum world, making advanced cryptography available for both technical and non-technical
+users.
 
-## Usage
+---
 
-### Generate a New Key Pair
+## Features
 
-```rust
-use pqpg::SigningKey;
+- **Post-Quantum Cryptography**: Secure signing and verification using SPHINCS+ (a quantum-resistant algorithm).
+- **Identity Management**: Easily create and manage cryptographic identities with additional metadata like comments.
+- **Key Management**: Generate key pairs, sign data, verify signatures, and control access to secret keys.
 
-let signing_key = SigningKey::new();
-let public_key = signing_key.get_public_key();
-let secret_key = signing_key.get_secret_key().unwrap();
-```
-
-### Create a Signature
-
-```rust
-let message = b"test message";
-let signature = signing_key.create_signature(message).unwrap();
-```
-
-### Verify a Signature
-
-```rust
-let is_valid = signing_key.verify_signature(message, signature);
-assert!(is_valid);
-```
-
-### Deserialize Key from Public Key
-
-```rust
-let public_key = "<Base64 Encoded Public Key>";
-let signing_key = SigningKey::new_from_public_key(public_key.to_string()).unwrap();
-```
+---
 
 ## Development
 
 ### Running Tests
 
-To run the tests, use the following command:
+To run the unit and integration tests:
 
 ```sh
 cargo test
 ```
 
-## Contributing
+### Linting and Formatting
 
-Contributions are welcome! Please open an issue or submit a pull request for any proposed changes or enhancements.
+Use the following commands to ensure the code is properly formatted and adheres to best practices:
 
-## License
+```sh
+cargo fmt
+cargo clippy
+```
 
-This project is licensed under the MIT License.
+### Directory Structure
 
-## Acknowledgements
-
-- The `pqcrypto` crate for providing the core cryptographic implementations.
-- The `serde` crate for serialization support.
-
-## Contact
-
-For any questions or support, please open an issue on the [GitHub repository](https://github.com/gwo0d/pqpg).
+- **src/**: Contains the application's source code.
 
 ---
 
-This README provides an overview of the pqpg library, its features, installation instructions, usage examples, development guidelines, and contribution information. For more details, refer to the source code and documentation.
+## Contributing
+
+Contributions are welcome! If you would like to contribute:
+
+1. Fork the repository.
+2. Create a new feature branch (`git checkout -b feature-name`).
+3. Add your changes, ensuring all tests pass.
+4. Submit a pull request with a clear description of your changes.
+
+---
+
+## License
+
+This project is licensed under the MIT License. View the license file [here](LICENSE).
+
+---
+
+## Acknowledgements
+
+- Thanks to the `pqcrypto` crate for its quantum-resistant cryptographic algorithms.
+- Inspired by the usability of GPG and similar cryptographic tools.
+- Serialization and deserialization made easy by the `serde` crate.
+
+---
+
+## Contact
+
+If you encounter any issues or have feature requests, feel free to open a ticket on
+the [GitHub repository](https://github.com/gwo0d/pqpg).
