@@ -28,12 +28,9 @@ impl Vault {
 
         let mut vault_keys: Vec<Key> = Vec::new();
         for key_type in key_types {
-            match key_type {
-                's' => {
-                    let signing_key = SigningKey::new();
-                    vault_keys.push(Key::Signing(signing_key));
-                }
-                _ => {}
+            if key_type == 's' {
+                let signing_key = SigningKey::new();
+                vault_keys.push(Key::Signing(signing_key));
             }
         }
 

@@ -1,5 +1,4 @@
 use base64::prelude::*;
-use hex;
 use pqcrypto::sign::sphincsshake256ssimple::*;
 use pqcrypto::traits::sign::{
     DetachedSignature, PublicKey as PublicKeyTrait, SecretKey as SecretKeyTrait,
@@ -76,7 +75,6 @@ impl SigningKey {
 mod tests {
     use super::*;
     use pqcrypto::sign::sphincsshake256ssimple::keypair;
-    use serde_json;
 
     #[test]
     fn new_creates_valid_keypair() {
