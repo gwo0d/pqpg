@@ -1,21 +1,30 @@
 use base64::prelude::*;
+use hex;
 use pqcrypto::sign::sphincsshake256ssimple::*;
 use pqcrypto::traits::sign::{
     DetachedSignature, PublicKey as PublicKeyTrait, SecretKey as SecretKeyTrait,
 };
 use serde::{Deserialize, Serialize};
 
+use crate::constants::FINGERPRINT_LENGTH;
+
 #[derive(Serialize, Deserialize)]
 pub struct SigningKey {
     pk: PublicKey,
     #[serde(skip_serializing_if = "Option::is_none")]
     sk: Option<SecretKey>,
+    fingerprint: String,
 }
 
 impl SigningKey {
     pub fn new() -> Self {
         let (pk, sk) = keypair();
-        Self { pk, sk: Some(sk) }
+        let fingerprint = hex::encode(&pk.as_bytes()[..FINGERPRINT_LENGTH]);
+        Self {
+            pk,
+            sk: Some(sk),
+            fingerprint,
+        }
     }
 
     pub fn new_from_public_key(public_key: String) -> Result<Self, &'static str> {
@@ -23,7 +32,13 @@ impl SigningKey {
             .decode(public_key)
             .map_err(|_| "Invalid base64 encoding.")?;
         let pk = PublicKey::from_bytes(&decoded_pk).map_err(|_| "Invalid public key.")?;
-        Ok(Self { pk, sk: None })
+        let fingerprint = hex::encode(&pk.as_bytes()[..FINGERPRINT_LENGTH]);
+
+        Ok(Self {
+            pk,
+            sk: None,
+            fingerprint,
+        })
     }
 
     pub fn create_signature(&self, message: &[u8]) -> Result<String, &'static str> {
@@ -50,6 +65,10 @@ impl SigningKey {
         self.sk
             .as_ref()
             .map(|sk| BASE64_STANDARD.encode(sk.as_bytes()))
+    }
+
+    pub fn get_fingerprint(&self) -> String {
+        self.fingerprint.clone()
     }
 }
 
