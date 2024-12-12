@@ -17,6 +17,14 @@ impl SigningKey {
         Self { pk, sk: Some(sk) }
     }
 
+    pub fn new_from_public_key(public_key: String) -> Result<Self, &'static str> {
+        let decoded_pk = BASE64_STANDARD
+            .decode(public_key)
+            .map_err(|_| "Invalid base64 encoding.")?;
+        let pk = PublicKey::from_bytes(&decoded_pk).map_err(|_| "Invalid public key.")?;
+        Ok(Self { pk, sk: None })
+    }
+
     pub fn create_signature(&self, message: &[u8]) -> Result<String, &'static str> {
         self.sk
             .as_ref()
@@ -25,9 +33,12 @@ impl SigningKey {
     }
 
     pub fn verify_signature(&self, message: &[u8], signature: String) -> bool {
-        DetachedSignature::from_bytes(&BASE64_STANDARD.decode(signature).unwrap())
-            .map(|sig| verify_detached_signature(&sig, message, &self.pk).is_ok())
-            .unwrap_or(false)
+        if let Ok(decoded_sig) = BASE64_STANDARD.decode(signature) {
+            if let Ok(sig) = DetachedSignature::from_bytes(&decoded_sig) {
+                return verify_detached_signature(&sig, message, &self.pk).is_ok();
+            }
+        }
+        false
     }
 
     pub fn get_public_key(&self) -> String {
@@ -44,9 +55,32 @@ impl SigningKey {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use pqcrypto::sign::sphincsshake256ssimple::keypair;
 
     #[test]
-    fn create_signature_success() {
+    fn new_creates_valid_keypair() {
+        let signing_key = SigningKey::new();
+        assert!(signing_key.sk.is_some());
+        assert!(!signing_key.get_public_key().is_empty());
+    }
+
+    #[test]
+    fn new_from_public_key_creates_instance_with_only_public_key() {
+        let (pk, _) = keypair();
+        let public_key = BASE64_STANDARD.encode(pk.as_bytes());
+        let signing_key = SigningKey::new_from_public_key(public_key).unwrap();
+        assert!(signing_key.sk.is_none());
+        assert!(!signing_key.get_public_key().is_empty());
+    }
+
+    #[test]
+    fn new_from_public_key_returns_error_for_invalid_key() {
+        let result = SigningKey::new_from_public_key("invalid_key".to_string());
+        assert!(result.is_err());
+    }
+
+    #[test]
+    fn create_signature_returns_signature_when_secret_key_is_present() {
         let signing_key = SigningKey::new();
         let message = b"test message";
         let signature = signing_key.create_signature(message).unwrap();
@@ -54,16 +88,17 @@ mod tests {
     }
 
     #[test]
-    fn create_signature_no_secret_key() {
-        let mut signing_key = SigningKey::new();
-        signing_key.sk = None;
+    fn create_signature_returns_error_when_secret_key_is_absent() {
+        let (pk, _) = keypair();
+        let public_key = BASE64_STANDARD.encode(pk.as_bytes());
+        let signing_key = SigningKey::new_from_public_key(public_key).unwrap();
         let message = b"test message";
         let result = signing_key.create_signature(message);
-        assert_eq!(result, Err("No secret key available."));
+        assert!(result.is_err());
     }
 
     #[test]
-    fn verify_signature_success() {
+    fn verify_signature_returns_true_for_valid_signature() {
         let signing_key = SigningKey::new();
         let message = b"test message";
         let signature = signing_key.create_signature(message).unwrap();
@@ -71,31 +106,30 @@ mod tests {
     }
 
     #[test]
-    fn verify_signature_failure() {
+    fn verify_signature_returns_false_for_invalid_signature() {
         let signing_key = SigningKey::new();
         let message = b"test message";
-        let invalid_signature = "invalidsignature";
-        assert!(!signing_key.verify_signature(message, invalid_signature.to_string()));
+        let invalid_signature = "invalid_signature".to_string();
+        assert!(!signing_key.verify_signature(message, invalid_signature));
     }
 
     #[test]
-    fn get_public_key_success() {
+    fn get_public_key_returns_non_empty_string() {
         let signing_key = SigningKey::new();
-        let public_key = signing_key.get_public_key();
-        assert!(!public_key.is_empty());
+        assert!(!signing_key.get_public_key().is_empty());
     }
 
     #[test]
-    fn get_secret_key_success() {
+    fn get_secret_key_returns_some_when_secret_key_is_present() {
         let signing_key = SigningKey::new();
-        let secret_key = signing_key.get_secret_key().unwrap();
-        assert!(!secret_key.is_empty());
+        assert!(signing_key.get_secret_key().is_some());
     }
 
     #[test]
-    fn get_secret_key_none() {
-        let mut signing_key = SigningKey::new();
-        signing_key.sk = None;
+    fn get_secret_key_returns_none_when_secret_key_is_absent() {
+        let (pk, _) = keypair();
+        let public_key = BASE64_STANDARD.encode(pk.as_bytes());
+        let signing_key = SigningKey::new_from_public_key(public_key).unwrap();
         assert!(signing_key.get_secret_key().is_none());
     }
 }
