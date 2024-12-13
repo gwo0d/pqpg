@@ -56,6 +56,14 @@ impl SigningKey {
         false
     }
 
+    pub fn get_redacted_key(&self) -> Self {
+        Self {
+            pk: self.pk.clone(),
+            sk: None,
+            fingerprint: self.fingerprint.clone(),
+        }
+    }
+
     pub fn get_public_key(&self) -> String {
         BASE64_STANDARD.encode(self.pk.as_bytes())
     }
@@ -130,6 +138,21 @@ mod tests {
         let message = b"test message";
         let invalid_signature = "invalid_signature".to_string();
         assert!(!signing_key.verify_signature(message, invalid_signature));
+    }
+
+    #[test]
+    fn get_redacted_key_removes_secret_key() {
+        let signing_key = SigningKey::new();
+        assert!(signing_key.sk.is_some());
+
+        let redacted_key = signing_key.get_redacted_key();
+
+        assert!(redacted_key.sk.is_none());
+        assert_eq!(redacted_key.get_public_key(), signing_key.get_public_key());
+        assert_eq!(
+            redacted_key.get_fingerprint(),
+            signing_key.get_fingerprint()
+        );
     }
 
     #[test]
