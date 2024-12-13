@@ -3,7 +3,7 @@ use crate::signing_key::SigningKey;
 use serde::{Deserialize, Serialize};
 
 #[derive(Serialize, Deserialize)]
-enum Key {
+pub enum Key {
     Signing(SigningKey),
 }
 
@@ -18,44 +18,52 @@ pub struct Vault {
 
 impl Vault {
     pub fn new(
-        first_name: String,
-        last_name: String,
-        email: String,
-        comment: Option<String>,
-        key_types: Vec<char>,
+        primary_identity: Identity,
+        secondary_identities: Option<Vec<Identity>>,
+        key_types: Vec<Key>,
     ) -> Self {
-        let primary_identity = Identity::new(first_name, last_name, email, comment);
-
         let mut vault_keys: Vec<Key> = Vec::new();
+
         for key_type in key_types {
-            if key_type == 's' {
-                let signing_key = SigningKey::new();
-                vault_keys.push(Key::Signing(signing_key));
+            match key_type {
+                Key::Signing(key) => vault_keys.push(Key::Signing(key)),
             }
         }
 
+        let external_vaults: Vec<Self> = Vec::new();
+
         Self {
             primary_identity,
-            secondary_identities: None,
+            secondary_identities,
             vault_keys,
-            external_vaults: Vec::new(),
+            external_vaults,
         }
     }
 
-    fn ensure_secondary_identities(&mut self) -> &mut Vec<Identity> {
-        if self.secondary_identities.is_none() {
-            self.secondary_identities = Some(Vec::new());
+    pub fn get_secret_keys(&self) -> &Vec<Key> {
+        &self.vault_keys
+    }
+
+    pub fn get_public_keys(&self) -> Vec<Key> {
+        let mut public_keys: Vec<Key> = Vec::new();
+        for key in self.vault_keys.iter() {
+            match key {
+                Key::Signing(key) => public_keys.push(Key::Signing(key.get_redacted_key())),
+            }
         }
-        self.secondary_identities.as_mut().unwrap()
+
+        public_keys
     }
 
-    pub fn add_or_initialise_secondary_identity(&mut self, identity: Identity) {
-        self.ensure_secondary_identities().push(identity);
+    pub fn get_external_vaults(&self) -> &Vec<Self> {
+        &self.external_vaults
     }
 
-    pub fn export_with_secrets(&self) -> String {
-        serde_json::to_string(&self).unwrap()
+    pub fn get_primary_identity(&self) -> &Identity {
+        &self.primary_identity
     }
 
-    // TODO: Implement export_without_secrets method.
+    pub fn get_secondary_identities(&self) -> &Option<Vec<Identity>> {
+        &self.secondary_identities
+    }
 }
